@@ -5,11 +5,56 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+
+import io.reactivex.Observable;
+import io.reactivex.Observer;
+import io.reactivex.Scheduler;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
+import io.reactivex.schedulers.Schedulers;
+
 public class MainActivity extends AppCompatActivity {
+
+    private static final String TAG = "MainActivity";
+    Observable mObservable = Observable      //Observable. This will emit the data
+            .just("1","2","3");    //Operator
+
+    Observer<String> mObserver = new Observer<String>() {
+        @Override
+        public void onError(Throwable e) {
+            //...
+            Log.d(TAG," onError: " + e.toString());
+        }
+
+        @Override
+        public void onComplete() {
+            Log.d(TAG," onComplete ");
+        }
+
+
+        @Override
+        public void onSubscribe(Disposable d) {
+            Log.d(TAG," onSubscribe: " +d.toString());
+        }
+
+        @Override
+        public void onNext(String s) {
+            //...
+            Log.d(TAG," onNext: " +s);
+            Log.d(TAG," Current Thread: " +Thread.currentThread().toString());
+
+        }
+    };
+
+    Subscription mSubscription = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,6 +71,10 @@ public class MainActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });
+        Log.d(TAG," Main Thread: " +Thread.currentThread().toString());
+        mObservable.subscribeOn(Schedulers.newThread())      ;                                  //Observable runs on new background thread.
+        mObservable.observeOn(AndroidSchedulers.mainThread())    ;                              //Observer will run on main UI thread.
+        mObservable.subscribe(mObserver);                                                        //Subscribe the observer
     }
 
     @Override
@@ -48,5 +97,10 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
     }
 }
